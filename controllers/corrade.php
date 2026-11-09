@@ -42,6 +42,20 @@ final class corrade extends controller
                     $this->redirectAdmin('created');
                     return;
                 }
+                if ($action === 'update') {
+                    $model->updateAgent($_POST);
+                    $this->redirectAdmin('updated');
+                    return;
+                }
+                if ($action === 'delete_data') {
+                    $confirmation = (string) ($_POST['confirmation'] ?? '');
+                    if ($confirmation !== 'DELETE DATA') {
+                        throw new InvalidArgumentException('Type DELETE DATA to clear agent registrations.');
+                    }
+                    $model->deleteData();
+                    $this->redirectAdmin('data_deleted');
+                    return;
+                }
                 if ($action === 'delete') {
                     $model->deleteAgent((int) ($_POST['id'] ?? 0));
                     $this->redirectAdmin('deleted');
@@ -61,6 +75,11 @@ final class corrade extends controller
             'agents' => $state === 'current' ? $model->getAgents() : [],
             'error' => $error,
             'status' => trim((string) ($_GET['status'] ?? '')),
+            'module' => [
+                'name' => 'Corrade Manager',
+                'version' => '0.1.0',
+                'schema_version' => '0.1.0',
+            ],
         ]);
     }
 
