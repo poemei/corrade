@@ -263,7 +263,7 @@ foreach ($agents as $agent) {
                     <?php if (!$sparklesRegistered): ?>
                         <div class="alert alert-info">
                             <strong>Existing installation:</strong> sparklesagent
-                            <p class="mb-2">Configuration: <code>/home/stnchain/corrade/CorradeConfiguration.xml</code><br>Service: <code>corrade.service</code></p>
+                            <p class="mb-2">Configuration: <code>/opt/bots/sparklesagent/CorradeConfiguration.xml</code><br>Service: <code>corrade.service</code></p>
                             <form method="post" action="/admin/corrade">
                                 <?= $this->csrf_field() ?>
                                 <input type="hidden" name="action" value="adopt_sparklesagent">
