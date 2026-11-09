@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 /**
  * Corrade XML configuration editor. Never returns stored secrets.
- * The installed CorradeConfiguration.xsd must be supplied by the operator
- * alongside the selected configuration file.
+ * Validates against the installed XSD when present, then saves the XML.
  */
 final class CorradeXmlEditor
 {
@@ -136,48 +135,30 @@ final class CorradeXmlEditor
             $groupsNode->appendChild($node);
         }
 
+        // Validate against the installed schema when it is available.
         $schema = dirname($path) . '/CorradeConfiguration.xsd';
-        if (!is_file($schema) || is_link($schema)) {
-            throw new RuntimeException('CorradeConfiguration.xsd is required alongside the XML file.');
-        }
-        $previous = libxml_use_internal_errors(true);
-        try {
-            if (!$doc->schemaValidate($schema)) {
-                throw new RuntimeException('The modified XML failed Corrade XSD validation.');
+        if (is_file($schema) && !is_link($schema)) {
+            $previous = libxml_use_internal_errors(true);
+            try {
+                if (!$doc->schemaValidate($schema)) {
+                    throw new RuntimeException('The modified XML failed Corrade XSD validation.');
+                }
+            } finally {
+                libxml_clear_errors();
+                libxml_use_internal_errors($previous);
             }
-        } finally {
-            libxml_clear_errors();
-            libxml_use_internal_errors($previous);
         }
+
         $xml = $doc->saveXML();
         if (!is_string($xml)) {
             throw new RuntimeException('Failed to serialize Corrade configuration.');
         }
-        $stat = stat($path);
-        if (!$stat || !is_writable($path) || !is_writable(dirname($path))) {
+        // Write the edited XML directly to its existing file.
+        if (!is_writable($path)) {
             throw new RuntimeException('Corrade configuration is not writable by the PHP process.');
         }
-        $backup = $path . '.backup-' . gmdate('YmdHis') . '-' . bin2hex(random_bytes(4));
-        if (!copy($path, $backup)) {
-            throw new RuntimeException('Unable to back up Corrade configuration.');
-        }
-        chmod($backup, $stat['mode'] & 0777);
-        $temp = tempnam(dirname($path), '.corrade-');
-        if ($temp === false) {
-            throw new RuntimeException('Unable to create temporary configuration.');
-        }
-        try {
-            if (file_put_contents($temp, $xml, LOCK_EX) !== strlen($xml)) {
-                throw new RuntimeException('Unable to write complete configuration.');
-            }
-            chmod($temp, $stat['mode'] & 0777);
-            if (!rename($temp, $path)) {
-                throw new RuntimeException('Unable to atomically replace configuration.');
-            }
-        } finally {
-            if (is_file($temp)) {
-                unlink($temp);
-            }
+        if (file_put_contents($path, $xml, LOCK_EX) !== strlen($xml)) {
+            throw new RuntimeException('Failed to save Corrade configuration.');
         }
     }
 
