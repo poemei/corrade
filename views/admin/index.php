@@ -19,7 +19,7 @@ $messages = [
     'updated' => 'Bot registry settings updated.',
     'deleted' => 'Bot registration removed.',
     'data_deleted' => 'All bot registrations deleted. Database tables were preserved.',
-    'xml_saved' => 'Corrade XML saved and backed up. Restart separately when appropriate.',
+    'xml_saved' => 'Corrade XML saved. Restart separately when appropriate.',
 ];
 $tab = (string) ($_GET['tab'] ?? 'status');
 if (!in_array($tab, ['status', 'bots', 'register'], true)) {
@@ -236,7 +236,7 @@ foreach ($agents as $agent) {
                                     </tbody>
                                 </table>
                             </div>
-                            <p class="form-text">The final empty row adds one group. Save validates against CorradeConfiguration.xsd, backs up the existing XML and replaces it atomically. No service restart occurs.</p>
+                            <p class="form-text">The final empty row adds one group. Save updates the existing XML file and validates against CorradeConfiguration.xsd when available. No service restart occurs.</p>
                             <button type="submit" class="btn btn-primary">Save Corrade XML</button>
                         </form>
                     <?php else: ?>
