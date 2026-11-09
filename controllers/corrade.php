@@ -16,6 +16,7 @@ final class corrade extends controller
         $model = $this->model('corrade_model');
         $state = $model->databaseState();
         $error = null;
+        require_once __DIR__ . '/../lib/CorradeXmlEditor.php';
 
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $this->require_csrf();
@@ -40,6 +41,16 @@ final class corrade extends controller
                 if ($action === 'create') {
                     $model->createAgent($_POST);
                     $this->redirectAdmin('created');
+                    return;
+                }
+                if ($action === 'save_xml') {
+                    $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+                    $agent = $id ? $model->getAgent($id) : null;
+                    if (!$agent) {
+                        throw new InvalidArgumentException('Unknown Corrade bot.');
+                    }
+                    CorradeXmlEditor::save((string) $agent['configuration_path'], $_POST);
+                    $this->redirectAdmin('xml_saved');
                     return;
                 }
                 if ($action === 'update') {
@@ -70,8 +81,23 @@ final class corrade extends controller
         }
 
         $state = $model->databaseState();
+        $editAgent = null;
+        $xmlConfig = null;
+        $editId = filter_var($_GET['edit'] ?? null, FILTER_VALIDATE_INT);
+        if ($state === 'current' && $editId) {
+            $editAgent = $model->getAgent($editId);
+            if ($editAgent) {
+                try {
+                    $xmlConfig = CorradeXmlEditor::read((string) $editAgent['configuration_path']);
+                } catch (Throwable $exception) {
+                    $error = 'Corrade XML could not be read: ' . $exception->getMessage();
+                }
+            }
+        }
         $this->view('admin/index', [
             'database_state' => $state,
+            'xml_config' => $xmlConfig,
+            'edit_agent' => $editAgent,
             'agents' => $state === 'current' ? $model->getAgents() : [],
             'error' => $error,
             'status' => trim((string) ($_GET['status'] ?? '')),
