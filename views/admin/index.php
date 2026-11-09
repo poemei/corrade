@@ -19,6 +19,7 @@ $messages = [
     'updated' => 'Bot registry settings updated.',
     'deleted' => 'Bot registration removed.',
     'data_deleted' => 'All bot registrations deleted. Database tables were preserved.',
+    'xml_saved' => 'Corrade XML saved and backed up. Restart separately when appropriate.',
 ];
 $tab = (string) ($_GET['tab'] ?? 'status');
 if (!in_array($tab, ['status', 'bots', 'register'], true)) {
@@ -183,6 +184,64 @@ foreach ($agents as $agent) {
                         <button type="submit" class="btn btn-primary">Save Bot</button>
                         <a class="btn btn-secondary" href="/admin/corrade?tab=bots">Cancel</a>
                     </form>
+                    <?php $xml = $data['xml_config'] ?? null; ?>
+                    <?php if (is_array($xml)): ?>
+                        <hr>
+                        <h3 class="h5">Corrade XML Configuration</h3>
+                        <p class="text-muted">These settings are read from the selected bot's XML file. Existing credentials are never displayed. A blank replacement password preserves the current value.</p>
+                        <form method="post" action="/admin/corrade">
+                            <?= $this->csrf_field() ?>
+                            <input type="hidden" name="action" value="save_xml">
+                            <input type="hidden" name="id" value="<?= (int) $editing['id'] ?>">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="xml-first">Second Life First Name</label>
+                                    <input class="form-control" id="xml-first" name="first_name" maxlength="31" required value="<?= $escape($xml['first_name']) ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="xml-last">Second Life Last Name</label>
+                                    <input class="form-control" id="xml-last" name="last_name" maxlength="31" required value="<?= $escape($xml['last_name']) ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="xml-password">Replace Login Password</label>
+                                    <input class="form-control" id="xml-password" name="login_password" type="password" autocomplete="new-password">
+                                    <div class="form-text">Existing hash <?= !empty($xml['has_password']) ? 'present' : 'missing' ?>; leave blank to preserve it.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="xml-region">Start Region</label>
+                                    <input class="form-control" id="xml-region" name="start_region" required value="<?= $escape($xml['start_region']) ?>">
+                                </div>
+                            </div>
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" id="xml-autoconnect" type="checkbox" name="auto_connect" value="1" <?= !empty($xml['auto_connect']) ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="xml-autoconnect">Auto Connect</label>
+                            </div>
+                            <h4 class="h6">Groups</h4>
+                            <p class="text-muted">One row per group. Comma-separated permissions and notifications. Empty group name omits that row. Removing a group from this form removes it from the saved XML.</p>
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle">
+                                    <thead><tr><th>Group</th><th>Replace Group Password</th><th>Permissions</th><th>Notifications</th></tr></thead>
+                                    <tbody>
+                                    <?php foreach (array_merge($xml['groups'], [['name' => '', 'has_password' => false, 'permissions' => [], 'notifications' => []]]) as $i => $group): ?>
+                                        <tr>
+                                            <td><input class="form-control" aria-label="Group name" name="group_name[<?= $i ?>]" maxlength="128" value="<?= $escape($group['name']) ?>"></td>
+                                            <td>
+                                                <input class="form-control" aria-label="Replacement group password" type="password" autocomplete="new-password" name="group_password[<?= $i ?>]">
+                                                <small class="text-muted"><?= !empty($group['has_password']) ? 'Existing value preserved if blank' : 'Required for new group' ?></small>
+                                            </td>
+                                            <td><textarea class="form-control" aria-label="Group permissions" rows="2" name="group_permissions[<?= $i ?>]"><?= $escape(implode(', ', $group['permissions'])) ?></textarea></td>
+                                            <td><textarea class="form-control" aria-label="Group notifications" rows="2" name="group_notifications[<?= $i ?>]"><?= $escape(implode(', ', $group['notifications'])) ?></textarea></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="form-text">The final empty row adds one group. Save validates against CorradeConfiguration.xsd, backs up the existing XML and replaces it atomically. No service restart occurs.</p>
+                            <button type="submit" class="btn btn-primary">Save Corrade XML</button>
+                        </form>
+                    <?php else: ?>
+                        <div class="alert alert-warning mt-3">XML configuration editor unavailable. Check the configuration path, permissions, and XML file.</div>
+                    <?php endif; ?>
                     <hr>
                     <form method="post" action="/admin/corrade" onsubmit="return confirm('Remove this bot registration? Corrade will not be stopped.');">
                         <?= $this->csrf_field() ?>
