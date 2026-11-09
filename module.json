@@ -1,0 +1,29 @@
+{
+    "name": "Corrade Manager",
+    "module": "corrade",
+    "version": "0.1.0",
+    "schema_version": "0.1.0",
+    "description": "Single-server management of independent Corrade Second Life agents in ChAoS MVC.",
+    "creator": "Poe Mei",
+    "domain": "poemei.com",
+    "certified": "No",
+    "files": [
+        "controllers/corrade.php",
+        "models/corrade_model.php",
+        "views/index.php",
+        "views/admin/index.php",
+        "sql/schema.sql",
+        "docs/README.md",
+        "docs/CHANGELOG.md",
+        "README.md"
+    ],
+    "routes": [
+        "index"
+    ],
+    "database_tables": [
+        "corrade_schema",
+        "corrade_agents"
+    ],
+    "migrations": {},
+    "sha256": ""
+}
