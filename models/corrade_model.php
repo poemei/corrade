@@ -16,6 +16,7 @@ final class corrade_model extends model
         'corrade_agents',
     ];
 
+    private const BOT_ROOT = '/opt/bots';
     private const STATE_TABLE = 'corrade_schema';
     private const AGENT_TABLE = 'corrade_agents';
 
@@ -78,6 +79,16 @@ final class corrade_model extends model
         return is_array($row) ? $row : null;
     }
 
+    /** Resolve an installed bot by its registry identity, not a stale stored path. */
+    public function configurationPath(array $agent): string
+    {
+        $name = (string) ($agent['agent_name'] ?? '');
+        if (preg_match('/^[A-Za-z0-9_-]{1,64}$/D', $name) !== 1) {
+            throw new RuntimeException('Invalid registered Corrade bot name.');
+        }
+        return self::BOT_ROOT . '/' . $name . '/CorradeConfiguration.xml';
+    }
+
     public function updateAgent(array $input): void
     {
         $id = filter_var($input['id'] ?? null, FILTER_VALIDATE_INT);
@@ -138,7 +149,7 @@ final class corrade_model extends model
 
         return [
             'agent_name' => $name,
-            'configuration_path' => $path,
+            'configuration_path' => self::BOT_ROOT . '/' . $name . '/CorradeConfiguration.xml',
             'service_name' => $service,
             'is_enabled' => !empty($input['is_enabled']) ? 1 : 0,
         ];
