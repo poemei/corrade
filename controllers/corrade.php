@@ -49,7 +49,7 @@ final class corrade extends controller
                     if (!$agent) {
                         throw new InvalidArgumentException('Unknown Corrade bot.');
                     }
-                    CorradeXmlEditor::save((string) $agent['configuration_path'], $_POST);
+                    CorradeXmlEditor::save($model->configurationPath($agent), $_POST);
                     $this->redirectAdmin('xml_saved');
                     return;
                 }
@@ -88,7 +88,7 @@ final class corrade extends controller
             $editAgent = $model->getAgent($editId);
             if ($editAgent) {
                 try {
-                    $xmlConfig = CorradeXmlEditor::read((string) $editAgent['configuration_path']);
+                    $xmlConfig = CorradeXmlEditor::read($model->configurationPath($editAgent));
                 } catch (Throwable $exception) {
                     $error = 'Corrade XML could not be read: ' . $exception->getMessage();
                 }
