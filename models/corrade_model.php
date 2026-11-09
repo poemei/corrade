@@ -62,43 +62,50 @@ final class corrade_model extends model
         ) ?: [];
     }
 
+    public function getAgent(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+
+        $row = $this->fetch(
+            'SELECT `id`, `agent_name`, `configuration_path`, `service_name`, '
+            . '`is_enabled` FROM `' . self::AGENT_TABLE . '` '
+            . 'WHERE `id` = :id LIMIT 1',
+            ['id' => $id]
+        );
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function updateAgent(array $input): void
+    {
+        $id = filter_var($input['id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$id || $id < 1 || $this->getAgent($id) === null) {
+            throw new InvalidArgumentException('A registered agent must be selected.');
+        }
+
+        $values = $this->validatedAgent($input);
+        $this->update(self::AGENT_TABLE, $values, 'id = :id', ['id' => $id]);
+    }
+
+    public function deleteData(): void
+    {
+        if ($this->databaseState() !== 'current') {
+            throw new RuntimeException('Corrade database is not current.');
+        }
+
+        $this->query('DELETE FROM `' . self::AGENT_TABLE . '`');
+    }
+
     public function createAgent(array $input): int
     {
-        $name = trim((string) ($input['agent_name'] ?? ''));
-        $path = trim((string) ($input['configuration_path'] ?? ''));
-        $service = trim((string) ($input['service_name'] ?? ''));
-
-        if (preg_match('/^[A-Za-z0-9_-]{1,64}$/D', $name) !== 1) {
-            throw new InvalidArgumentException(
-                'Agent name must contain 1–64 letters, numbers, underscores or hyphens.'
-            );
-        }
-
-        if ($path === '' || strlen($path) > 512 || $path[0] !== '/'
-            || str_contains($path, '..')
-            || preg_match('/[\x00-\x1F\x7F]/', $path) === 1) {
-            throw new InvalidArgumentException(
-                'A valid absolute configuration path is required.'
-            );
-        }
-
-        if ($service !== 'corrade@' . $name . '.service' && $service !== 'corrade.service') {
-            throw new InvalidArgumentException(
-                'Service must be corrade@<agent-name>.service or corrade.service.'
-            );
-        }
-
-        return (int) $this->insert(self::AGENT_TABLE, [
-            'agent_name' => $name,
-            'configuration_path' => $path,
-            'service_name' => $service,
-            'is_enabled' => 0,
-        ]);
+        return (int) $this->insert(self::AGENT_TABLE, $this->validatedAgent($input));
     }
 
     /**
-     * Adopt a known, existing Corrade installation into the registry only.
-     * Never reads credentials, rewrites XML or controls the service.
+     * Adopt a known installation as a registry entry only.
+     * This operation does not access credentials, XML or systemd.
      */
     public function adoptExistingAgent(): int
     {
@@ -106,7 +113,35 @@ final class corrade_model extends model
             'agent_name' => 'sparklesagent',
             'configuration_path' => '/home/stnchain/corrade/CorradeConfiguration.xml',
             'service_name' => 'corrade.service',
+            'is_enabled' => 0,
         ]);
+    }
+
+    private function validatedAgent(array $input): array
+    {
+        $name = trim((string) ($input['agent_name'] ?? ''));
+        $path = trim((string) ($input['configuration_path'] ?? ''));
+        $service = trim((string) ($input['service_name'] ?? ''));
+
+        if (preg_match('/^[A-Za-z0-9_-]{1,64}$/D', $name) !== 1) {
+            throw new InvalidArgumentException('Agent name must be 1–64 letters, numbers, underscores or hyphens.');
+        }
+        if ($path === '' || strlen($path) > 512 || $path[0] !== '/'
+            || str_contains($path, '..')
+            || preg_match('/[\\x00-\\x1F\\x7F]/', $path) === 1) {
+            throw new InvalidArgumentException('A valid absolute configuration path is required.');
+        }
+        if ($service !== 'corrade.service'
+            && $service !== 'corrade@' . $name . '.service') {
+            throw new InvalidArgumentException('Service must be corrade.service or corrade@<agent>.service.');
+        }
+
+        return [
+            'agent_name' => $name,
+            'configuration_path' => $path,
+            'service_name' => $service,
+            'is_enabled' => !empty($input['is_enabled']) ? 1 : 0,
+        ];
     }
 
     public function deleteAgent(int $id): void
