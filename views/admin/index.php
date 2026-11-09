@@ -1,5 +1,8 @@
 <?php
 // path: /user/modules/corrade/views/admin/index.php
+if (!theme::render('head', get_defined_vars())) {
+    require APPROOT . '/views/inc/head.php';
+}
 $state = (string) ($data['database_state'] ?? 'invalid');
 $agents = is_array($data['agents'] ?? null) ? $data['agents'] : [];
 $error = $data['error'] ?? null;
@@ -76,4 +79,7 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
         <p role="alert">Database state is invalid. No mutation is available.</p>
     <?php endif; ?>
 </div>
-
+<?php
+if (!theme::render('foot', get_defined_vars())) {
+    require APPROOT . '/views/inc/foot.php';
+}
