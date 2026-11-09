@@ -2,8 +2,10 @@
 declare(strict_types=1);
 
 // path: /user/modules/corrade/views/admin/index.php
-// Admin shell supplies the site header and footer.
-
+// render the header
+if (!theme::render('head', get_defined_vars())) {
+    require APPROOT . '/views/inc/head.php';
+}
 $state = (string) ($data['database_state'] ?? 'invalid');
 $agents = is_array($data['agents'] ?? null) ? $data['agents'] : [];
 $module = is_array($data['module'] ?? null) ? $data['module'] : [];
@@ -232,3 +234,8 @@ foreach ($agents as $agent) {
         </section>
     <?php endif; ?>
 </div>
+<?php
+// Render the footer
+if (!theme::render('foot', get_defined_vars())) {
+    require APPROOT . '/views/inc/foot.php';
+}
