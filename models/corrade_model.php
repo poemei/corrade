@@ -111,7 +111,7 @@ final class corrade_model extends model
     {
         return $this->createAgent([
             'agent_name' => 'sparklesagent',
-            'configuration_path' => '/home/stnchain/corrade/CorradeConfiguration.xml',
+            'configuration_path' => '/opt/bots/sparklesagent/CorradeConfiguration.xml',
             'service_name' => 'corrade.service',
             'is_enabled' => 0,
         ]);
