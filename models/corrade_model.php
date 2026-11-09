@@ -82,9 +82,9 @@ final class corrade_model extends model
             );
         }
 
-        if ($service !== 'corrade@' . $name . '.service') {
+        if ($service !== 'corrade@' . $name . '.service' && $service !== 'corrade.service') {
             throw new InvalidArgumentException(
-                'Service name must be corrade@<agent-name>.service.'
+                'Service must be corrade@<agent-name>.service or corrade.service.'
             );
         }
 
@@ -93,6 +93,19 @@ final class corrade_model extends model
             'configuration_path' => $path,
             'service_name' => $service,
             'is_enabled' => 0,
+        ]);
+    }
+
+    /**
+     * Adopt a known, existing Corrade installation into the registry only.
+     * Never reads credentials, rewrites XML or controls the service.
+     */
+    public function adoptExistingAgent(): int
+    {
+        return $this->createAgent([
+            'agent_name' => 'sparklesagent',
+            'configuration_path' => '/home/stnchain/corrade/CorradeConfiguration.xml',
+            'service_name' => 'corrade.service',
         ]);
     }
 
