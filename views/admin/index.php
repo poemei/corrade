@@ -1,6 +1,5 @@
 <?php
 // path: /user/modules/corrade/views/admin/index.php
-require APPROOT . '/views/inc/head.php';
 $state = (string) ($data['database_state'] ?? 'invalid');
 $agents = is_array($data['agents'] ?? null) ? $data['agents'] : [];
 $error = $data['error'] ?? null;
@@ -13,7 +12,7 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
     <p>Version 0.1.0 · Database state: <strong><?= $e($state) ?></strong></p>
     <p>Agent registry only. No Corrade processes or systemd services are modified here.</p>
     <?php if ($error): ?><p role="alert"><?= $e($error) ?></p><?php endif; ?>
-    <?php if (in_array($status, ['installed', 'created', 'deleted'], true)): ?>
+    <?php if (in_array($status, ['installed', 'created', 'deleted', 'adopted'], true)): ?>
         <p role="status">Operation completed: <?= $e($status) ?></p>
     <?php endif; ?>
     <?php if ($state === 'missing'): ?>
@@ -23,6 +22,25 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
             <button type="submit">Install SQL</button>
         </form>
     <?php elseif ($state === 'current'): ?>
+        <?php
+        $sparklesRegistered = false;
+        foreach ($agents as $agent) {
+            if (($agent['agent_name'] ?? '') === 'sparklesagent') {
+                $sparklesRegistered = true;
+                break;
+            }
+        }
+        ?>
+        <?php if (!$sparklesRegistered): ?>
+            <h2>Existing Corrade installation</h2>
+            <p>Known agent: <strong>sparklesagent</strong> · Configuration: <code>/home/stnchain/corrade/CorradeConfiguration.xml</code> · Service: <code>corrade.service</code></p>
+            <p>Adoption registers this known installation in the database only. It does not verify that the configuration or service exists, change the XML, or start or stop Corrade.</p>
+            <form method="post" action="/admin/corrade">
+                <?= $this->csrf_field() ?>
+                <input type="hidden" name="action" value="adopt_sparklesagent">
+                <button type="submit">Register existing sparklesagent</button>
+            </form>
+        <?php endif; ?>
         <h2>Registered agents (<?= count($agents) ?>)</h2>
         <table>
             <thead><tr><th>Agent</th><th>Configuration</th><th>Service</th><th>Enabled</th><th>Action</th></tr></thead>
@@ -51,11 +69,11 @@ $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'
             <input type="hidden" name="action" value="create">
             <label>Agent name <input name="agent_name" required maxlength="64" pattern="[A-Za-z0-9_-]+"></label>
             <label>Configuration path <input name="configuration_path" required maxlength="512" placeholder="/home/stnchain/corrade/agents/agent01/CorradeConfiguration.xml"></label>
-            <label>Service name <input name="service_name" required maxlength="80" placeholder="corrade@agent01.service"></label>
+            <label>Service name <input name="service_name" required maxlength="80" placeholder="corrade@agent01.service or corrade.service"></label>
             <button type="submit">Register</button>
         </form>
     <?php else: ?>
         <p role="alert">Database state is invalid. No mutation is available.</p>
     <?php endif; ?>
 </div>
-<?php require APPROOT . '/views/inc/footer.php'; ?>
+
