@@ -32,6 +32,11 @@ final class corrade extends controller
                 if ($state !== 'current') {
                     throw new RuntimeException('The module database is not current.');
                 }
+                if ($action === 'adopt_sparklesagent') {
+                    $model->adoptExistingAgent();
+                    $this->redirectAdmin('adopted');
+                    return;
+                }
                 if ($action === 'create') {
                     $model->createAgent($_POST);
                     $this->redirectAdmin('created');
